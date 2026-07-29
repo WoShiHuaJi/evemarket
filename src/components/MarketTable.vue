@@ -100,10 +100,10 @@ function profitClass(v: number | null): string {
           <th class="num">Jita 买价</th>
           <th class="num">4-HWWF 卖价</th>
           <th class="num">4-HWWF 买价</th>
-          <th class="num sortable" @click="toggleSort('jToHProfit')">J→4H 利润</th>
-          <th class="num sortable" @click="toggleSort('jToHPct')">J→4H %</th>
-          <th class="num sortable" @click="toggleSort('hToJProfit')">4H→J 利润</th>
-          <th class="num sortable" @click="toggleSort('hToJPct')">4H→J %</th>
+          <th class="num sortable" @click="toggleSort('jToHProfit')">Jita到4H 利润</th>
+          <th class="num sortable" @click="toggleSort('jToHPct')">Jita到4H 利润率</th>
+          <th class="num sortable" @click="toggleSort('hToJProfit')">4H到Jita 利润</th>
+          <th class="num sortable" @click="toggleSort('hToJPct')">4H到Jita 利润率</th>
         </tr>
       </thead>
       <tbody>
@@ -184,6 +184,11 @@ table {
   width: 100%;
   border-collapse: collapse;
   font-size: 13px;
+  table-layout: fixed;
+}
+th:first-child,
+td:first-child {
+  width: 200px;
 }
 th,
 td {
@@ -208,6 +213,11 @@ th.sortable:hover {
 .num {
   text-align: right;
   font-variant-numeric: tabular-nums;
+}
+.name div {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 .name .en {
   color: #5d6a7d;

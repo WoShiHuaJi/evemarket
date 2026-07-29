@@ -49,6 +49,8 @@ export const useMarketStore = defineStore('market', () => {
 
   const jitaOrders = ref<Order[]>([])
   const hwwfOrders = ref<Order[]>([])
+  const serverRows = ref<PriceRow[] | null>(null)
+  const source = ref<'server' | 'local'>('local')
   const refreshing = ref(false)
   const progress = ref<{ jita: [number, number]; hwwf: [number, number] }>({ jita: [0, 0], hwwf: [0, 0] })
   const lastUpdatedAt = ref<number | null>(null)
@@ -58,7 +60,63 @@ export const useMarketStore = defineStore('market', () => {
   onErrorLimitChange(() => (errorLimitRemain.value = getErrorLimitRemain()))
 
   let timer: ReturnType<typeof setTimeout> | null = null
+  let serverTimer: ReturnType<typeof setTimeout> | null = null
   let pendingExpiresAt = Date.now()
+
+  function applyServerPayload(payload: { updatedAt: number; rows: Record<string, [number, number, number, number]> }) {
+    const z = (v: number) => (v === 0 ? null : v)
+    serverRows.value = data.types.map((t) => {
+      const r = payload.rows[String(t.id)]
+      const js = r ? z(r[0]) : null
+      const jb = r ? z(r[1]) : null
+      const hs = r ? z(r[2]) : null
+      const hb = r ? z(r[3]) : null
+      const jToHProfit = js !== null && hs !== null ? hs - js : null
+      const hToJProfit = hs !== null && jb !== null ? jb - hs : null
+      return {
+        type: t,
+        categoryId: groupRoot.get(t.id) ?? 0,
+        jitaSell: js,
+        jitaBuy: jb,
+        hwwfSell: hs,
+        hwwfBuy: hb,
+        jToHProfit,
+        jToHPct: jToHProfit !== null && js! > 0 ? (jToHProfit / js!) * 100 : null,
+        hToJProfit,
+        hToJPct: hToJProfit !== null && hs! > 0 ? (hToJProfit / hs!) * 100 : null,
+      }
+    })
+    lastUpdatedAt.value = payload.updatedAt
+  }
+
+  async function fetchServerPrices(): Promise<boolean> {
+    try {
+      const res = await fetch('/api/prices')
+      if (!res.ok) return false
+      const payload = await res.json()
+      if (!payload || typeof payload.updatedAt !== 'number' || !payload.rows) return false
+      applyServerPayload(payload)
+      return true
+    } catch {
+      return false
+    }
+  }
+
+  function scheduleServerPoll() {
+    if (serverTimer) clearTimeout(serverTimer)
+    serverTimer = setTimeout(async () => {
+      if (document.visibilityState === 'visible') {
+        const ok = await fetchServerPrices()
+        if (!ok) {
+          source.value = 'local'
+          serverRows.value = null
+          refresh()
+          return
+        }
+      }
+      scheduleServerPoll()
+    }, 60_000)
+  }
 
   async function refresh() {
     if (refreshing.value) return
@@ -95,13 +153,31 @@ export const useMarketStore = defineStore('market', () => {
     }, delay)
   }
 
-  function start() {
+  async function start() {
     document.addEventListener('visibilitychange', onVisibility)
-    refresh()
+    if (await fetchServerPrices()) {
+      source.value = 'server'
+      scheduleServerPoll()
+    } else {
+      refresh()
+    }
+  }
+
+  function manualRefresh() {
+    if (source.value === 'server') {
+      fetchServerPrices()
+    } else {
+      refresh()
+    }
   }
 
   function onVisibility() {
     if (document.visibilityState === 'visible' && !refreshing.value) {
+      if (source.value === 'server') {
+        fetchServerPrices()
+        scheduleServerPoll()
+        return
+      }
       if (Date.now() >= pendingExpiresAt) {
         if (timer) clearTimeout(timer)
         refresh()
@@ -112,6 +188,7 @@ export const useMarketStore = defineStore('market', () => {
   }
 
   const rows = computed<PriceRow[]>(() => {
+    if (serverRows.value) return serverRows.value
     const jitaByType = new Map<number, { sell: number | null; buy: number | null }>()
     const stationId = locations.jita.stationId
     for (const o of jitaOrders.value) {
@@ -168,6 +245,7 @@ export const useMarketStore = defineStore('market', () => {
     categories,
     locations,
     rows,
+    source,
     refreshing,
     progress,
     lastUpdatedAt,
@@ -175,6 +253,7 @@ export const useMarketStore = defineStore('market', () => {
     error,
     errorLimitRemain,
     refresh,
+    manualRefresh,
     start,
   }
 })

@@ -1,0 +1,15 @@
+name = "evemarket"
+main = "worker/index.ts"
+compatibility_date = "2025-12-01"
+
+[assets]
+directory = "./dist"
+binding = "ASSETS"
+
+# 运行 npx wrangler kv namespace create PRICES 后，把返回的 id 填到这里
+[[kv_namespaces]]
+binding = "PRICES"
+id = "2bf893e7fa3d4e168176532dac9a6751"
+
+[triggers]
+crons = ["*/20 * * * *"]
