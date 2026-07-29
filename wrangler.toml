@@ -10,6 +10,3 @@ binding = "ASSETS"
 [[kv_namespaces]]
 binding = "PRICES"
 id = "2bf893e7fa3d4e168176532dac9a6751"
-
-[triggers]
-crons = ["*/20 * * * *"]
