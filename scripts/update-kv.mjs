@@ -85,7 +85,13 @@ async function main() {
   console.log(`aggregated ${Object.keys(rows).length} types, payload ${(payload.length / 1024).toFixed(0)} KB`)
 
   if (DRY_RUN) {
-    console.log('DRY_RUN: skipping KV write')
+    if (process.env.OUTPUT_FILE) {
+      const { writeFileSync } = await import('node:fs')
+      writeFileSync(process.env.OUTPUT_FILE, payload)
+      console.log(`DRY_RUN: payload written to ${process.env.OUTPUT_FILE}`)
+    } else {
+      console.log('DRY_RUN: skipping KV write')
+    }
     return
   }
 
