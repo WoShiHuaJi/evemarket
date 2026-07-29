@@ -1,0 +1,7 @@
+name = "evemarket"
+pages_build_output_dir = "./dist"
+compatibility_date = "2025-12-01"
+
+[[kv_namespaces]]
+binding = "PRICES"
+id = "2bf893e7fa3d4e168176532dac9a6751"
