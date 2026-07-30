@@ -131,10 +131,14 @@ function profitClass(v: number | null): string {
           <th class="num">4-HWWF 买价</th>
           <th class="num sortable" @click="toggleSort('vol7')">4H 7天销量</th>
           <th class="num sortable" @click="toggleSort('vol30')">4H 30天销量</th>
-          <th class="num sortable" @click="toggleSort('jToHProfit')">Jita到4H 利润</th>
-          <th class="num sortable" @click="toggleSort('jToHPct')">Jita到4H 利润率</th>
-          <th class="num sortable" @click="toggleSort('hToJProfit')">4H到Jita 利润</th>
-          <th class="num sortable" @click="toggleSort('hToJPct')">4H到Jita 利润率</th>
+          <template v-if="direction !== 'htoj'">
+            <th class="num sortable" @click="toggleSort('jToHProfit')">Jita到4H 利润</th>
+            <th class="num sortable" @click="toggleSort('jToHPct')">Jita到4H 利润率</th>
+          </template>
+          <template v-if="direction !== 'jtoh'">
+            <th class="num sortable" @click="toggleSort('hToJProfit')">4H到Jita 利润</th>
+            <th class="num sortable" @click="toggleSort('hToJPct')">4H到Jita 利润率</th>
+          </template>
         </tr>
       </thead>
       <tbody>
@@ -149,10 +153,14 @@ function profitClass(v: number | null): string {
           <td class="num">{{ fmt(r.hwwfBuy) }}</td>
           <td class="num">{{ fmtVol(r.vol7) }}</td>
           <td class="num">{{ fmtVol(r.vol30) }}</td>
-          <td class="num" :class="profitClass(r.jToHProfit)">{{ fmt(r.jToHProfit) }}</td>
-          <td class="num" :class="profitClass(r.jToHProfit)">{{ fmtPct(r.jToHPct) }}</td>
-          <td class="num" :class="profitClass(r.hToJProfit)">{{ fmt(r.hToJProfit) }}</td>
-          <td class="num" :class="profitClass(r.hToJProfit)">{{ fmtPct(r.hToJPct) }}</td>
+          <template v-if="direction !== 'htoj'">
+            <td class="num" :class="profitClass(r.jToHProfit)">{{ fmt(r.jToHProfit) }}</td>
+            <td class="num" :class="profitClass(r.jToHProfit)">{{ fmtPct(r.jToHPct) }}</td>
+          </template>
+          <template v-if="direction !== 'jtoh'">
+            <td class="num" :class="profitClass(r.hToJProfit)">{{ fmt(r.hToJProfit) }}</td>
+            <td class="num" :class="profitClass(r.hToJProfit)">{{ fmtPct(r.hToJPct) }}</td>
+          </template>
         </tr>
       </tbody>
     </table>
