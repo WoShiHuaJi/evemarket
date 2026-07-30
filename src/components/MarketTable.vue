@@ -306,4 +306,47 @@ th.sortable:hover {
   padding: 6px 16px;
   cursor: pointer;
 }
+
+@media (max-width: 768px) {
+  .controls {
+    padding: 6px 8px;
+    gap: 6px;
+  }
+  .dir-group {
+    width: 100%;
+  }
+  .dir-group button {
+    flex: 1;
+    padding: 8px 4px;
+    font-size: 12px;
+    white-space: nowrap;
+  }
+  .filters {
+    gap: 8px;
+    font-size: 12px;
+  }
+  .filters input:not([type]),
+  .filters input[type='text'],
+  .filters input[type='number'] {
+    font-size: 16px;
+    padding: 8px;
+  }
+  .table-wrap {
+    padding: 0 8px 8px;
+  }
+  table {
+    font-size: 12px;
+  }
+  th,
+  td {
+    padding: 4px 5px;
+  }
+  th:first-child,
+  td:first-child {
+    width: 110px;
+  }
+  .name .en {
+    display: none;
+  }
+}
 </style>

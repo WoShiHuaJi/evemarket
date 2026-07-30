@@ -57,6 +57,14 @@ const progressText = computed(() => {
   font-weight: 700;
   color: #e8ecf3;
 }
+
+@media (max-width: 768px) {
+  .status-bar {
+    gap: 8px;
+    padding: 6px 8px;
+    font-size: 12px;
+  }
+}
 .refreshing {
   color: #4da3ff;
 }
