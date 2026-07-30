@@ -19,6 +19,8 @@ export interface PriceRow {
   jitaBuy: number | null
   hwwfSell: number | null
   hwwfBuy: number | null
+  vol7: number | null
+  vol30: number | null
   jToHProfit: number | null
   jToHPct: number | null
   hToJProfit: number | null
@@ -50,6 +52,7 @@ export const useMarketStore = defineStore('market', () => {
   const jitaOrders = ref<Order[]>([])
   const hwwfOrders = ref<Order[]>([])
   const serverRows = ref<PriceRow[] | null>(null)
+  const serverVolumes = ref<Record<string, [number, number]> | null>(null)
   const source = ref<'server' | 'local'>('local')
   const refreshing = ref(false)
   const progress = ref<{ jita: [number, number]; hwwf: [number, number] }>({ jita: [0, 0], hwwf: [0, 0] })
@@ -65,8 +68,10 @@ export const useMarketStore = defineStore('market', () => {
 
   function applyServerPayload(payload: { updatedAt: number; rows: Record<string, [number, number, number, number]> }) {
     const z = (v: number) => (v === 0 ? null : v)
+    const volumes = serverVolumes.value
     serverRows.value = data.types.map((t) => {
       const r = payload.rows[String(t.id)]
+      const v = volumes?.[String(t.id)]
       const js = r ? z(r[0]) : null
       const jb = r ? z(r[1]) : null
       const hs = r ? z(r[2]) : null
@@ -80,6 +85,8 @@ export const useMarketStore = defineStore('market', () => {
         jitaBuy: jb,
         hwwfSell: hs,
         hwwfBuy: hb,
+        vol7: v ? v[0] : null,
+        vol30: v ? v[1] : null,
         jToHProfit,
         jToHPct: jToHProfit !== null && js! > 0 ? (jToHProfit / js!) * 100 : null,
         hToJProfit,
@@ -89,16 +96,32 @@ export const useMarketStore = defineStore('market', () => {
     lastUpdatedAt.value = payload.updatedAt
   }
 
+  let cachedPricesPayload: { updatedAt: number; rows: Record<string, [number, number, number, number]> } | null = null
+
   async function fetchServerPrices(): Promise<boolean> {
     try {
       const res = await fetch('/api/prices')
       if (!res.ok) return false
       const payload = await res.json()
       if (!payload || typeof payload.updatedAt !== 'number' || !payload.rows) return false
+      cachedPricesPayload = payload
       applyServerPayload(payload)
       return true
     } catch {
       return false
+    }
+  }
+
+  async function fetchServerVolumes(): Promise<void> {
+    try {
+      const res = await fetch('/api/volumes')
+      if (!res.ok) return
+      const payload = await res.json()
+      if (!payload || !payload.vol) return
+      serverVolumes.value = payload.vol
+      if (cachedPricesPayload) applyServerPayload(cachedPricesPayload)
+    } catch {
+      // 销量数据缺失不影响主流程
     }
   }
 
@@ -157,6 +180,7 @@ export const useMarketStore = defineStore('market', () => {
     document.addEventListener('visibilitychange', onVisibility)
     if (await fetchServerPrices()) {
       source.value = 'server'
+      fetchServerVolumes()
       scheduleServerPoll()
     } else {
       refresh()
@@ -166,6 +190,7 @@ export const useMarketStore = defineStore('market', () => {
   function manualRefresh() {
     if (source.value === 'server') {
       fetchServerPrices()
+      fetchServerVolumes()
     } else {
       refresh()
     }
@@ -233,6 +258,8 @@ export const useMarketStore = defineStore('market', () => {
         jitaBuy: j.buy,
         hwwfSell: h.sell,
         hwwfBuy: h.buy,
+        vol7: null,
+        vol30: null,
         jToHProfit,
         jToHPct: jToHProfit !== null && j.sell! > 0 ? (jToHProfit / j.sell!) * 100 : null,
         hToJProfit,

@@ -9,6 +9,17 @@ onMounted(() => store.start())
 </script>
 
 <template>
-  <StatusBar />
-  <MarketTable />
+  <div class="layout">
+    <StatusBar />
+    <MarketTable />
+  </div>
 </template>
+
+<style scoped>
+.layout {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  overflow: hidden;
+}
+</style>

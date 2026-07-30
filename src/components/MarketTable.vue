@@ -8,7 +8,7 @@ const activeCategory = ref<number>(0)
 const search = ref('')
 const direction = ref<'all' | 'jtoh' | 'htoj'>('all')
 const minProfit = ref<number | null>(null)
-const sortKey = ref<'jToHProfit' | 'jToHPct' | 'hToJProfit' | 'hToJPct' | 'jitaSell'>('jToHProfit')
+const sortKey = ref<'jToHProfit' | 'jToHPct' | 'hToJProfit' | 'hToJPct' | 'jitaSell' | 'vol7' | 'vol30'>('jToHProfit')
 const sortDesc = ref(true)
 const showCount = ref(300)
 
@@ -74,6 +74,14 @@ function fmtPct(v: number | null): string {
   return v === null ? '-' : v.toFixed(1) + '%'
 }
 
+function fmtVol(v: number | null): string {
+  if (v === null) return '-'
+  if (v >= 1e9) return (v / 1e9).toFixed(2) + 'B'
+  if (v >= 1e6) return (v / 1e6).toFixed(2) + 'M'
+  if (v >= 1e3) return (v / 1e3).toFixed(1) + 'K'
+  return String(v)
+}
+
 function profitClass(v: number | null): string {
   if (v === null) return ''
   return v > 0 ? 'pos' : v < 0 ? 'neg' : ''
@@ -121,6 +129,8 @@ function profitClass(v: number | null): string {
           <th class="num">Jita 买价</th>
           <th class="num">4-HWWF 卖价</th>
           <th class="num">4-HWWF 买价</th>
+          <th class="num sortable" @click="toggleSort('vol7')">4H 7天销量</th>
+          <th class="num sortable" @click="toggleSort('vol30')">4H 30天销量</th>
           <th class="num sortable" @click="toggleSort('jToHProfit')">Jita到4H 利润</th>
           <th class="num sortable" @click="toggleSort('jToHPct')">Jita到4H 利润率</th>
           <th class="num sortable" @click="toggleSort('hToJProfit')">4H到Jita 利润</th>
@@ -137,6 +147,8 @@ function profitClass(v: number | null): string {
           <td class="num">{{ fmt(r.jitaBuy) }}</td>
           <td class="num">{{ fmt(r.hwwfSell) }}</td>
           <td class="num">{{ fmt(r.hwwfBuy) }}</td>
+          <td class="num">{{ fmtVol(r.vol7) }}</td>
+          <td class="num">{{ fmtVol(r.vol30) }}</td>
           <td class="num" :class="profitClass(r.jToHProfit)">{{ fmt(r.jToHProfit) }}</td>
           <td class="num" :class="profitClass(r.jToHProfit)">{{ fmtPct(r.jToHPct) }}</td>
           <td class="num" :class="profitClass(r.hToJProfit)">{{ fmt(r.hToJProfit) }}</td>
@@ -157,6 +169,7 @@ function profitClass(v: number | null): string {
   display: flex;
   flex-direction: column;
   gap: 8px;
+  flex-shrink: 0;
 }
 .tabs {
   display: flex;
@@ -216,8 +229,10 @@ input[type='number'] {
   width: 110px;
 }
 .table-wrap {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: auto;
   padding: 0 16px 16px;
-  overflow-x: auto;
 }
 table {
   width: 100%;
@@ -241,6 +256,7 @@ th {
   position: sticky;
   top: 0;
   background: #161a21;
+  z-index: 2;
 }
 th.sortable {
   cursor: pointer;
