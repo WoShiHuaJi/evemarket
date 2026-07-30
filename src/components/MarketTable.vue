@@ -20,13 +20,26 @@ const columnDefs = [
 type ColKey = (typeof columnDefs)[number]['key']
 
 const defaultCols = Object.fromEntries(columnDefs.map((c) => [c.key, true])) as Record<ColKey, boolean>
+const mobileDefaultCols: Record<ColKey, boolean> = {
+  jitaSell: true,
+  jitaBuy: true,
+  hwwfSell: true,
+  hwwfBuy: true,
+  vol7: true,
+  vol30: false,
+  jToHProfit: false,
+  jToHPct: false,
+  hToJProfit: false,
+  hToJPct: false,
+}
 const savedCols = (() => {
   try {
     const s = localStorage.getItem('evemarket-cols')
-    return s ? { ...defaultCols, ...JSON.parse(s) } : defaultCols
+    if (s) return { ...defaultCols, ...JSON.parse(s) }
   } catch {
-    return defaultCols
+    // ignore
   }
+  return window.innerWidth <= 768 ? { ...mobileDefaultCols } : defaultCols
 })()
 const visibleCols = reactive<Record<ColKey, boolean>>(savedCols)
 watch(
