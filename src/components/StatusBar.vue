@@ -29,7 +29,7 @@ const progressText = computed(() => {
 
 <template>
   <div class="status-bar">
-    <span class="brand">EVE 倒货助手</span>
+    <span class="brand">神韵星空达购交平台</span>
     <span :class="store.source === 'server' ? 'src-server' : 'src-local'">
       {{ store.source === 'server' ? '云端数据' : '本地直连' }}
     </span>
