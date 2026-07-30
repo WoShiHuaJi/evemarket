@@ -19,3 +19,7 @@ jobs:
           CF_API_TOKEN: ${{ secrets.CF_API_TOKEN }}
           CF_ACCOUNT_ID: 1dfe0539c8d58192f82a475ae45cbd62
           CF_KV_NAMESPACE_ID: 2bf893e7fa3d4e168176532dac9a6751
+          EVE_CLIENT_ID: ${{ secrets.EVE_CLIENT_ID }}
+          EVE_CLIENT_SECRET: ${{ secrets.EVE_CLIENT_SECRET }}
+          EVE_REFRESH_TOKEN: ${{ secrets.EVE_REFRESH_TOKEN }}
+          EVE_STRUCTURE_IDS: ${{ vars.EVE_STRUCTURE_IDS }}

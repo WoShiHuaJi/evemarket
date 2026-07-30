@@ -13,6 +13,43 @@ if (!DRY_RUN && (!CF_API_TOKEN || !CF_ACCOUNT_ID || !CF_KV_NAMESPACE_ID)) {
   process.exit(1)
 }
 
+const { EVE_CLIENT_ID, EVE_CLIENT_SECRET, EVE_REFRESH_TOKEN } = process.env
+const EVE_STRUCTURE_IDS = (process.env.EVE_STRUCTURE_IDS || '1053654548169,1053970513596,1034736246072,1035603743755')
+  .split(',')
+  .map((s) => Number(s.trim()))
+  .filter(Boolean)
+
+async function getAccessToken() {
+  const basic = Buffer.from(`${EVE_CLIENT_ID}:${EVE_CLIENT_SECRET}`).toString('base64')
+  const res = await fetch('https://login.eveonline.com/v2/oauth/token', {
+    method: 'POST',
+    headers: { Authorization: `Basic ${basic}`, 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: `grant_type=refresh_token&refresh_token=${EVE_REFRESH_TOKEN}`,
+  })
+  const j = await res.json()
+  if (!j.access_token) throw new Error(`SSO token refresh failed: ${JSON.stringify(j)}`)
+  return j.access_token
+}
+
+async function fetchStructureOrders(accessToken, structureId) {
+  const headers = { Authorization: `Bearer ${accessToken}`, 'X-Compatibility-Date': '2025-12-16' }
+  const first = await fetch(`${ESI}/markets/structures/${structureId}/?datasource=tranquility&page=1`, { headers })
+  if (!first.ok) throw new Error(`structure ${structureId}: ESI ${first.status}`)
+  const pages = Number(first.headers.get('x-pages')) || 1
+  const all = [...(await first.json())]
+  if (pages > 1) {
+    const rest = Array.from({ length: pages - 1 }, (_, i) => i + 2)
+    const results = await runPool(rest, 4, async (page) => {
+      const r = await fetch(`${ESI}/markets/structures/${structureId}/?datasource=tranquility&page=${page}`, { headers })
+      if (!r.ok) throw new Error(`structure ${structureId} page ${page}: ESI ${r.status}`)
+      return r.json()
+    })
+    for (const d of results) all.push(...d)
+  }
+  console.log(`structure ${structureId}: ${pages} pages, ${all.length} orders`)
+  return all
+}
+
 async function esiJson(path, retries = 4) {
   for (let attempt = 0; ; attempt++) {
     const res = await fetch(`${ESI}${path}`, { headers: ESI_HEADERS })
@@ -58,7 +95,24 @@ async function fetchRegionOrders(regionId) {
 }
 
 async function main() {
-  const [jita, hwwf] = await Promise.all([fetchRegionOrders(JITA_REGION), fetchRegionOrders(HWWF_REGION)])
+  const [jita, hwwfRegion] = await Promise.all([fetchRegionOrders(JITA_REGION), fetchRegionOrders(HWWF_REGION)])
+
+  let hwwf = hwwfRegion.filter((o) => o.system_id === HWWF_SYSTEM)
+  if (EVE_CLIENT_ID && EVE_CLIENT_SECRET && EVE_REFRESH_TOKEN) {
+    try {
+      const token = await getAccessToken()
+      for (const id of EVE_STRUCTURE_IDS) {
+        try {
+          hwwf.push(...(await fetchStructureOrders(token, id)))
+        } catch (e) {
+          console.error(e.message)
+        }
+      }
+      console.log(`4-HWWF orders total (region + structures): ${hwwf.length}`)
+    } catch (e) {
+      console.error(`SSO failed, fallback to region orders only: ${e.message}`)
+    }
+  }
 
   const rows = {}
   const touch = (id) => (rows[id] ??= [0, 0, 0, 0])
@@ -72,7 +126,6 @@ async function main() {
     }
   }
   for (const o of hwwf) {
-    if (o.system_id !== HWWF_SYSTEM) continue
     const r = touch(o.type_id)
     if (o.is_buy_order) {
       if (o.price > r[3]) r[3] = o.price
