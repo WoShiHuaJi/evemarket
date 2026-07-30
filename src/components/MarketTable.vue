@@ -1,8 +1,46 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, reactive, ref, watch } from 'vue'
 import { useMarketStore, type PriceRow } from '../stores/market'
 
 const store = useMarketStore()
+
+const columnDefs = [
+  { key: 'jitaSell', label: 'Jita 卖价' },
+  { key: 'jitaBuy', label: 'Jita 买价' },
+  { key: 'hwwfSell', label: '4-HWWF 卖价' },
+  { key: 'hwwfBuy', label: '4-HWWF 买价' },
+  { key: 'vol7', label: '4H 7天销量' },
+  { key: 'vol30', label: '4H 30天销量' },
+  { key: 'jToHProfit', label: 'Jita到4H 利润' },
+  { key: 'jToHPct', label: 'Jita到4H 利润率' },
+  { key: 'hToJProfit', label: '4H到Jita 利润' },
+  { key: 'hToJPct', label: '4H到Jita 利润率' },
+] as const
+
+type ColKey = (typeof columnDefs)[number]['key']
+
+const defaultCols = Object.fromEntries(columnDefs.map((c) => [c.key, true])) as Record<ColKey, boolean>
+const savedCols = (() => {
+  try {
+    const s = localStorage.getItem('evemarket-cols')
+    return s ? { ...defaultCols, ...JSON.parse(s) } : defaultCols
+  } catch {
+    return defaultCols
+  }
+})()
+const visibleCols = reactive<Record<ColKey, boolean>>(savedCols)
+watch(
+  visibleCols,
+  (v) => {
+    try {
+      localStorage.setItem('evemarket-cols', JSON.stringify(v))
+    } catch {
+      // ignore
+    }
+  },
+  { deep: true },
+)
+const showColPicker = ref(false)
 
 const activeCategory = ref<number>(0)
 const search = ref('')
@@ -117,6 +155,14 @@ function profitClass(v: number | null): string {
           @change="minProfit = ($event.target as HTMLInputElement).valueAsNumber || null"
         />
       </label>
+      <div class="col-picker">
+        <button @click="showColPicker = !showColPicker">显示列 ▾</button>
+        <div v-if="showColPicker" class="col-panel">
+          <label v-for="c in columnDefs" :key="c.key">
+            <input type="checkbox" v-model="visibleCols[c.key]" /> {{ c.label }}
+          </label>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -125,19 +171,19 @@ function profitClass(v: number | null): string {
       <thead>
         <tr>
           <th>物品</th>
-          <th class="num sortable" @click="toggleSort('jitaSell')">Jita 卖价</th>
-          <th class="num">Jita 买价</th>
-          <th class="num">4-HWWF 卖价</th>
-          <th class="num">4-HWWF 买价</th>
-          <th class="num sortable" @click="toggleSort('vol7')">4H 7天销量</th>
-          <th class="num sortable" @click="toggleSort('vol30')">4H 30天销量</th>
+          <th v-if="visibleCols.jitaSell" class="num sortable" @click="toggleSort('jitaSell')">Jita 卖价</th>
+          <th v-if="visibleCols.jitaBuy" class="num">Jita 买价</th>
+          <th v-if="visibleCols.hwwfSell" class="num">4-HWWF 卖价</th>
+          <th v-if="visibleCols.hwwfBuy" class="num">4-HWWF 买价</th>
+          <th v-if="visibleCols.vol7" class="num sortable" @click="toggleSort('vol7')">4H 7天销量</th>
+          <th v-if="visibleCols.vol30" class="num sortable" @click="toggleSort('vol30')">4H 30天销量</th>
           <template v-if="direction !== 'htoj'">
-            <th class="num sortable" @click="toggleSort('jToHProfit')">Jita到4H 利润</th>
-            <th class="num sortable" @click="toggleSort('jToHPct')">Jita到4H 利润率</th>
+            <th v-if="visibleCols.jToHProfit" class="num sortable" @click="toggleSort('jToHProfit')">Jita到4H 利润</th>
+            <th v-if="visibleCols.jToHPct" class="num sortable" @click="toggleSort('jToHPct')">Jita到4H 利润率</th>
           </template>
           <template v-if="direction !== 'jtoh'">
-            <th class="num sortable" @click="toggleSort('hToJProfit')">4H到Jita 利润</th>
-            <th class="num sortable" @click="toggleSort('hToJPct')">4H到Jita 利润率</th>
+            <th v-if="visibleCols.hToJProfit" class="num sortable" @click="toggleSort('hToJProfit')">4H到Jita 利润</th>
+            <th v-if="visibleCols.hToJPct" class="num sortable" @click="toggleSort('hToJPct')">4H到Jita 利润率</th>
           </template>
         </tr>
       </thead>
@@ -147,19 +193,19 @@ function profitClass(v: number | null): string {
             <div>{{ r.type.nameZh || r.type.name }}</div>
             <div class="en">{{ r.type.name }}</div>
           </td>
-          <td class="num">{{ fmt(r.jitaSell) }}</td>
-          <td class="num">{{ fmt(r.jitaBuy) }}</td>
-          <td class="num">{{ fmt(r.hwwfSell) }}</td>
-          <td class="num">{{ fmt(r.hwwfBuy) }}</td>
-          <td class="num">{{ fmtVol(r.vol7) }}</td>
-          <td class="num">{{ fmtVol(r.vol30) }}</td>
+          <td v-if="visibleCols.jitaSell" class="num">{{ fmt(r.jitaSell) }}</td>
+          <td v-if="visibleCols.jitaBuy" class="num">{{ fmt(r.jitaBuy) }}</td>
+          <td v-if="visibleCols.hwwfSell" class="num">{{ fmt(r.hwwfSell) }}</td>
+          <td v-if="visibleCols.hwwfBuy" class="num">{{ fmt(r.hwwfBuy) }}</td>
+          <td v-if="visibleCols.vol7" class="num">{{ fmtVol(r.vol7) }}</td>
+          <td v-if="visibleCols.vol30" class="num">{{ fmtVol(r.vol30) }}</td>
           <template v-if="direction !== 'htoj'">
-            <td class="num" :class="profitClass(r.jToHProfit)">{{ fmt(r.jToHProfit) }}</td>
-            <td class="num" :class="profitClass(r.jToHProfit)">{{ fmtPct(r.jToHPct) }}</td>
+            <td v-if="visibleCols.jToHProfit" class="num" :class="profitClass(r.jToHProfit)">{{ fmt(r.jToHProfit) }}</td>
+            <td v-if="visibleCols.jToHPct" class="num" :class="profitClass(r.jToHProfit)">{{ fmtPct(r.jToHPct) }}</td>
           </template>
           <template v-if="direction !== 'jtoh'">
-            <td class="num" :class="profitClass(r.hToJProfit)">{{ fmt(r.hToJProfit) }}</td>
-            <td class="num" :class="profitClass(r.hToJProfit)">{{ fmtPct(r.hToJPct) }}</td>
+            <td v-if="visibleCols.hToJProfit" class="num" :class="profitClass(r.hToJProfit)">{{ fmt(r.hToJProfit) }}</td>
+            <td v-if="visibleCols.hToJPct" class="num" :class="profitClass(r.hToJProfit)">{{ fmtPct(r.hToJPct) }}</td>
           </template>
         </tr>
       </tbody>
@@ -235,6 +281,39 @@ input[type='number'] {
 }
 .min-profit {
   width: 110px;
+}
+.col-picker {
+  position: relative;
+}
+.col-picker > button {
+  background: #232936;
+  color: #aab4c4;
+  border: 1px solid #2c3340;
+  border-radius: 4px;
+  padding: 4px 10px;
+  cursor: pointer;
+  font-size: 13px;
+}
+.col-panel {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  z-index: 20;
+  background: #1b1f27;
+  border: 1px solid #3d4657;
+  border-radius: 6px;
+  padding: 8px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  white-space: nowrap;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5);
+}
+.col-panel label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
 }
 .table-wrap {
   flex: 1 1 auto;
