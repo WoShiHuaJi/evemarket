@@ -6,23 +6,42 @@ const store = useMarketStore()
 
 const activeCategory = ref<number>(0)
 const search = ref('')
-const onlyProfitable = ref(false)
+const direction = ref<'all' | 'jtoh' | 'htoj'>('all')
 const minProfit = ref<number | null>(null)
 const sortKey = ref<'jToHProfit' | 'jToHPct' | 'hToJProfit' | 'hToJPct' | 'jitaSell'>('jToHProfit')
 const sortDesc = ref(true)
 const showCount = ref(300)
+
+function setDirection(d: 'all' | 'jtoh' | 'htoj') {
+  direction.value = d
+  if (d === 'jtoh') {
+    sortKey.value = 'jToHProfit'
+    sortDesc.value = true
+  } else if (d === 'htoj') {
+    sortKey.value = 'hToJProfit'
+    sortDesc.value = true
+  }
+}
 
 const filtered = computed<PriceRow[]>(() => {
   const q = search.value.trim().toLowerCase()
   let list = store.rows
   if (activeCategory.value) list = list.filter((r) => r.categoryId === activeCategory.value)
   if (q) list = list.filter((r) => r.type.name.toLowerCase().includes(q) || r.type.nameZh.includes(search.value.trim()))
-  if (onlyProfitable.value) {
-    list = list.filter((r) => (r.jToHProfit ?? -Infinity) > 0 || (r.hToJProfit ?? -Infinity) > 0)
+  if (direction.value === 'jtoh') {
+    list = list.filter((r) => (r.jToHProfit ?? -Infinity) > 0)
+  } else if (direction.value === 'htoj') {
+    list = list.filter((r) => (r.hToJProfit ?? -Infinity) > 0)
   }
   if (minProfit.value !== null && minProfit.value > 0) {
     const min = minProfit.value
-    list = list.filter((r) => (r.jToHProfit ?? -Infinity) >= min || (r.hToJProfit ?? -Infinity) >= min)
+    if (direction.value === 'jtoh') {
+      list = list.filter((r) => (r.jToHProfit ?? -Infinity) >= min)
+    } else if (direction.value === 'htoj') {
+      list = list.filter((r) => (r.hToJProfit ?? -Infinity) >= min)
+    } else {
+      list = list.filter((r) => (r.jToHProfit ?? -Infinity) >= min || (r.hToJProfit ?? -Infinity) >= min)
+    }
   }
   const key = sortKey.value
   const dir = sortDesc.value ? -1 : 1
@@ -75,10 +94,12 @@ function profitClass(v: number | null): string {
       </button>
     </div>
     <div class="filters">
+      <div class="dir-group">
+        <button :class="{ active: direction === 'all' }" @click="setDirection('all')">全部</button>
+        <button :class="{ active: direction === 'jtoh' }" @click="setDirection('jtoh')">Jita到4H 有利可图</button>
+        <button :class="{ active: direction === 'htoj' }" @click="setDirection('htoj')">4H到Jita 有利可图</button>
+      </div>
       <input v-model="search" placeholder="搜索物品（中/英文）" />
-      <label>
-        <input type="checkbox" v-model="onlyProfitable" /> 仅显示有利可图
-      </label>
       <label>
         最低利润
         <input
@@ -163,6 +184,24 @@ function profitClass(v: number | null): string {
   font-size: 13px;
   color: #aab4c4;
   flex-wrap: wrap;
+}
+.dir-group {
+  display: flex;
+  gap: 6px;
+}
+.dir-group button {
+  background: #232936;
+  color: #aab4c4;
+  border: 1px solid #2c3340;
+  border-radius: 4px;
+  padding: 4px 10px;
+  cursor: pointer;
+  font-size: 13px;
+}
+.dir-group button.active {
+  background: #3465a4;
+  color: #fff;
+  border-color: #3465a4;
 }
 input[type='text'],
 input:not([type]),

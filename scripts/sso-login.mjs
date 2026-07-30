@@ -9,7 +9,7 @@ if (!clientId || !clientSecret) {
 
 const PORT = 8610
 const REDIRECT_URI = `http://localhost:${PORT}/callback`
-const SCOPE = 'esi-markets.structure_markets'
+const SCOPE = 'esi-markets.structure_markets.v1'
 const STRUCTURES = [1053654548169, 1053970513596, 1034736246072, 1035603743755]
 
 const authUrl =
@@ -19,12 +19,22 @@ const authUrl =
 
 const basic = Buffer.from(`${clientId}:${clientSecret}`).toString('base64')
 
+let handled = false
 const server = http.createServer(async (req, res) => {
   const url = new URL(req.url, `http://localhost:${PORT}`)
+  if (url.pathname === '/favicon.ico') {
+    res.writeHead(204)
+    return res.end()
+  }
   if (url.pathname !== '/callback') {
     res.writeHead(302, { Location: authUrl })
     return res.end()
   }
+  if (handled) {
+    res.end('<h2>已处理，请勿重复刷新</h2>')
+    return
+  }
+  handled = true
   const code = url.searchParams.get('code')
   if (!code) {
     res.end('授权失败：未收到 code')
@@ -37,12 +47,27 @@ const server = http.createServer(async (req, res) => {
       headers: { Authorization: `Basic ${basic}`, 'Content-Type': 'application/x-www-form-urlencoded' },
       body: `grant_type=authorization_code&code=${code}`,
     })
-    const tokens = await tokenRes.json()
+    const rawText = await tokenRes.text()
+    let tokens
+    try {
+      tokens = JSON.parse(rawText)
+    } catch {
+      throw new Error(`token endpoint returned non-JSON (${tokenRes.status}): ${rawText.slice(0, 300)}`)
+    }
     if (!tokens.access_token) throw new Error(JSON.stringify(tokens))
 
-    const verify = await fetch('https://esi.evetech.net/verify/', {
+    console.log('\n========== 把以下内容存入 GitHub Secrets ==========')
+    console.log(`EVE_CLIENT_ID     = ${clientId}`)
+    console.log(`EVE_CLIENT_SECRET = ${clientSecret}`)
+    console.log(`EVE_REFRESH_TOKEN = ${tokens.refresh_token}`)
+    console.log('===================================================\n')
+
+    const verifyRes = await fetch('https://login.eveonline.com/oauth/verify', {
       headers: { Authorization: `Bearer ${tokens.access_token}` },
-    }).then((r) => r.json())
+    })
+    const verifyText = await verifyRes.text()
+    console.log(`verify status ${verifyRes.status}: ${verifyText.slice(0, 300)}`)
+    const verify = JSON.parse(verifyText)
     console.log(`\n已授权角色: ${verify.CharacterName} (ID: ${verify.CharacterID})`)
 
     console.log('\n测试建筑订单读取权限...')
@@ -67,11 +92,7 @@ const server = http.createServer(async (req, res) => {
       }
     }
 
-    console.log('\n========== 把以下内容存入 GitHub Secrets ==========')
-    console.log(`EVE_CLIENT_ID     = ${clientId}`)
-    console.log(`EVE_CLIENT_SECRET = ${clientSecret}`)
-    console.log(`EVE_REFRESH_TOKEN = ${tokens.refresh_token}`)
-    console.log('===================================================')
+    console.log('\n测试完成')
     res.end('<h2>授权成功！可以关闭本页面，回到终端查看 refresh token。</h2>')
   } catch (e) {
     console.error('换取 token 失败:', e)
