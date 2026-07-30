@@ -187,15 +187,6 @@ export const useMarketStore = defineStore('market', () => {
     }
   }
 
-  function manualRefresh() {
-    if (source.value === 'server') {
-      fetchServerPrices()
-      fetchServerVolumes()
-    } else {
-      refresh()
-    }
-  }
-
   function onVisibility() {
     if (document.visibilityState === 'visible' && !refreshing.value) {
       if (source.value === 'server') {
@@ -280,7 +271,6 @@ export const useMarketStore = defineStore('market', () => {
     error,
     errorLimitRemain,
     refresh,
-    manualRefresh,
     start,
   }
 })

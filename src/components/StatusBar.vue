@@ -38,7 +38,6 @@ const progressText = computed(() => {
     <span v-else-if="store.source === 'local'">下次刷新: {{ countdown }}</span>
     <span v-if="store.source === 'local' && store.errorLimitRemain !== null">ESI 错误余量: {{ store.errorLimitRemain }}</span>
     <span v-if="store.error" class="error">错误: {{ store.error }}</span>
-    <button :disabled="store.refreshing" @click="store.manualRefresh()">立即刷新</button>
   </div>
 </template>
 
@@ -69,18 +68,5 @@ const progressText = computed(() => {
 }
 .error {
   color: #ff6b6b;
-}
-button {
-  margin-left: auto;
-  background: #2c3340;
-  color: #e8ecf3;
-  border: 1px solid #3d4657;
-  border-radius: 4px;
-  padding: 4px 12px;
-  cursor: pointer;
-}
-button:disabled {
-  opacity: 0.5;
-  cursor: default;
 }
 </style>
