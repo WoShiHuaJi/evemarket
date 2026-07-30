@@ -42,8 +42,8 @@ watch(
 )
 const showColPicker = ref(false)
 
-const activeCategory = ref<number>(0)
 const search = ref('')
+
 const direction = ref<'all' | 'jtoh' | 'htoj'>('all')
 const minProfit = ref<number | null>(null)
 const sortKey = ref<'jToHProfit' | 'jToHPct' | 'hToJProfit' | 'hToJPct' | 'jitaSell' | 'vol7' | 'vol30'>('jToHProfit')
@@ -64,7 +64,6 @@ function setDirection(d: 'all' | 'jtoh' | 'htoj') {
 const filtered = computed<PriceRow[]>(() => {
   const q = search.value.trim().toLowerCase()
   let list = store.rows
-  if (activeCategory.value) list = list.filter((r) => r.categoryId === activeCategory.value)
   if (q) list = list.filter((r) => r.type.name.toLowerCase().includes(q) || r.type.nameZh.includes(search.value.trim()))
   if (direction.value === 'jtoh') {
     list = list.filter((r) => (r.jToHProfit ?? -Infinity) > 0)
@@ -128,17 +127,6 @@ function profitClass(v: number | null): string {
 
 <template>
   <div class="controls">
-    <div class="tabs">
-      <button :class="{ active: activeCategory === 0 }" @click="activeCategory = 0">全部</button>
-      <button
-        v-for="c in store.categories"
-        :key="c.id"
-        :class="{ active: activeCategory === c.id }"
-        @click="activeCategory = c.id"
-      >
-        {{ c.nameZh || c.name }}
-      </button>
-    </div>
     <div class="filters">
       <div class="dir-group">
         <button :class="{ active: direction === 'all' }" @click="setDirection('all')">全部</button>
@@ -224,25 +212,6 @@ function profitClass(v: number | null): string {
   flex-direction: column;
   gap: 8px;
   flex-shrink: 0;
-}
-.tabs {
-  display: flex;
-  gap: 6px;
-  flex-wrap: wrap;
-}
-.tabs button {
-  background: #232936;
-  color: #aab4c4;
-  border: 1px solid #2c3340;
-  border-radius: 4px;
-  padding: 4px 10px;
-  cursor: pointer;
-  font-size: 13px;
-}
-.tabs button.active {
-  background: #3465a4;
-  color: #fff;
-  border-color: #3465a4;
 }
 .filters {
   display: flex;
@@ -396,13 +365,14 @@ th.sortable:hover {
   }
   .dir-group button {
     flex: 1;
-    padding: 8px 4px;
-    font-size: 12px;
+    padding: 10px 4px;
+    font-size: 13px;
     white-space: nowrap;
   }
   .filters {
     gap: 8px;
     font-size: 12px;
+    align-items: stretch;
   }
   .filters input:not([type]),
   .filters input[type='text'],
@@ -410,19 +380,35 @@ th.sortable:hover {
     font-size: 16px;
     padding: 8px;
   }
+  .col-picker > button {
+    padding: 10px 16px;
+    font-size: 14px;
+  }
+  .col-panel {
+    left: auto;
+    right: 0;
+    font-size: 14px;
+    gap: 10px;
+    padding: 12px 16px;
+  }
   .table-wrap {
     padding: 0 8px 8px;
   }
   table {
     font-size: 12px;
+    table-layout: auto;
+    width: max-content;
+    min-width: 100%;
   }
   th,
   td {
-    padding: 4px 5px;
+    padding: 6px 8px;
+    white-space: nowrap;
   }
   th:first-child,
   td:first-child {
-    width: 110px;
+    width: auto;
+    max-width: 140px;
   }
   .name .en {
     display: none;
