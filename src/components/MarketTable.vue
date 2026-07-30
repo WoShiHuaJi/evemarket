@@ -143,7 +143,7 @@ function profitClass(v: number | null): string {
       </thead>
       <tbody>
         <tr v-for="r in visible" :key="r.type.id">
-          <td class="name">
+          <td class="name" :title="(r.type.nameZh || r.type.name) + '\n' + r.type.name">
             <div>{{ r.type.nameZh || r.type.name }}</div>
             <div class="en">{{ r.type.name }}</div>
           </td>
