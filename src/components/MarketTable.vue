@@ -184,7 +184,7 @@ function profitClass(v: number | null): string {
         <button :class="{ active: direction === 'jtoh' }" @click="setDirection('jtoh')">Jita→4H</button>
         <button :class="{ active: direction === 'htoj' }" @click="setDirection('htoj')">4H→Jita</button>
       </div>
-      <input v-model="search" placeholder="搜索物品/分类（中/英文）" />
+      <input v-model="search" class="search-input" placeholder="搜索物品/分类" />
       <label>
         最低利润
         <input
@@ -310,10 +310,13 @@ input[type='number'] {
   padding: 4px 8px;
 }
 .min-profit {
-  width: 110px;
+  width: 55px;
 }
 .shipping-cost {
   width: 55px;
+}
+.search-input {
+  width: 140px;
 }
 .col-picker {
   position: relative;
