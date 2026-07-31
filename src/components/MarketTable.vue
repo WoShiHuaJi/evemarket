@@ -181,8 +181,8 @@ function profitClass(v: number | null): string {
     <div class="filters">
       <div class="dir-group">
         <button :class="{ active: direction === 'all' }" @click="setDirection('all')">全部</button>
-        <button :class="{ active: direction === 'jtoh' }" @click="setDirection('jtoh')">Jita到4H 有利可图</button>
-        <button :class="{ active: direction === 'htoj' }" @click="setDirection('htoj')">4H到Jita 有利可图</button>
+        <button :class="{ active: direction === 'jtoh' }" @click="setDirection('jtoh')">Jita→4H</button>
+        <button :class="{ active: direction === 'htoj' }" @click="setDirection('htoj')">4H→Jita</button>
       </div>
       <input v-model="search" placeholder="搜索物品/分类（中/英文）" />
       <label>
@@ -198,7 +198,7 @@ function profitClass(v: number | null): string {
         运输成本/m³
         <input
           type="number"
-          class="min-profit"
+          class="shipping-cost"
           placeholder="ISK"
           :value="shippingCost || ''"
           @change="shippingCost = ($event.target as HTMLInputElement).valueAsNumber || 0"
@@ -311,6 +311,9 @@ input[type='number'] {
 }
 .min-profit {
   width: 110px;
+}
+.shipping-cost {
+  width: 55px;
 }
 .col-picker {
   position: relative;
