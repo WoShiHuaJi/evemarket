@@ -10,6 +10,7 @@ export interface TypeMeta {
   name: string
   nameZh: string
   groupId: number
+  volume: number
 }
 
 export interface PriceRow {

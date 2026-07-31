@@ -59,6 +59,22 @@ const search = ref('')
 
 const direction = ref<'all' | 'jtoh' | 'htoj'>('all')
 const minProfit = ref<number | null>(null)
+const shippingCost = ref<number>(
+  (() => {
+    try {
+      return Number(localStorage.getItem('evemarket-shipping-cost')) || 0
+    } catch {
+      return 0
+    }
+  })(),
+)
+watch(shippingCost, (v) => {
+  try {
+    localStorage.setItem('evemarket-shipping-cost', String(v))
+  } catch {
+    // ignore
+  }
+})
 const sortKey = ref<'jToHProfit' | 'jToHPct' | 'hToJProfit' | 'hToJPct' | 'jitaSell' | 'vol7' | 'vol30'>('jToHProfit')
 const sortDesc = ref(true)
 const showCount = ref(300)
@@ -77,6 +93,21 @@ function setDirection(d: 'all' | 'jtoh' | 'htoj') {
 const filtered = computed<PriceRow[]>(() => {
   const q = search.value.trim().toLowerCase()
   let list = store.rows
+  const cost = shippingCost.value
+  if (cost > 0) {
+    list = list.map((r) => {
+      const haul = r.type.volume * cost
+      const jToHProfit = r.jToHProfit !== null ? r.jToHProfit - haul : null
+      const hToJProfit = r.hToJProfit !== null ? r.hToJProfit - haul : null
+      return {
+        ...r,
+        jToHProfit,
+        jToHPct: jToHProfit !== null && r.jitaSell! > 0 ? (jToHProfit / r.jitaSell!) * 100 : null,
+        hToJProfit,
+        hToJPct: hToJProfit !== null && r.hwwfSell! > 0 ? (hToJProfit / r.hwwfSell!) * 100 : null,
+      }
+    })
+  }
   if (q) {
     list = list.filter(
       (r) =>
@@ -161,6 +192,16 @@ function profitClass(v: number | null): string {
           class="min-profit"
           placeholder="ISK"
           @change="minProfit = ($event.target as HTMLInputElement).valueAsNumber || null"
+        />
+      </label>
+      <label>
+        运输成本/m³
+        <input
+          type="number"
+          class="min-profit"
+          placeholder="ISK"
+          :value="shippingCost || ''"
+          @change="shippingCost = ($event.target as HTMLInputElement).valueAsNumber || 0"
         />
       </label>
       <div class="col-picker">

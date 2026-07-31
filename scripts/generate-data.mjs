@@ -108,11 +108,13 @@ async function main() {
     for (const r of res) enNames.set(r.id, r.name)
   }
 
-  console.log('4/5 fetching zh type names (this takes a few minutes)...')
+  console.log('4/5 fetching zh type names + volumes (this takes a few minutes)...')
   const zhNames = new Map()
+  const volumes = new Map()
   await pool(typeIds, CONCURRENCY, async (id) => {
     const d = await get(`/universe/types/${id}/?language=zh&datasource=tranquility`)
     zhNames.set(id, d.name)
+    volumes.set(id, d.packaged_volume ?? d.volume ?? 0)
   }, 'types-zh')
 
   console.log('5/5 resolving systems...')
@@ -136,6 +138,7 @@ async function main() {
       name: enNames.get(id) ?? '',
       nameZh: zhNames.get(id) ?? '',
       groupId: typeToGroup.get(id),
+      volume: volumes.get(id) ?? 0,
     })),
     locations: {
       jita: { regionId: 10000002, systemId: jita.id, stationId: 60003760, label: 'Jita 4-4 CNAP' },
