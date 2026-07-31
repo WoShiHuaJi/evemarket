@@ -40,9 +40,13 @@ interface MarketData {
 
 const data = rawData as unknown as MarketData
 const groupRoot = new Map<number, number>()
+const typeGroupText = new Map<number, string>()
 for (const t of data.types) {
   const g = data.groups[String(t.groupId)]
-  if (g) groupRoot.set(t.id, g.rootId)
+  if (!g) continue
+  groupRoot.set(t.id, g.rootId)
+  const root = data.categories.find((c) => c.id === g.rootId)
+  typeGroupText.set(t.id, `${g.nameZh} ${g.name} ${root?.nameZh ?? ''} ${root?.name ?? ''}`.toLowerCase())
 }
 
 export const useMarketStore = defineStore('market', () => {
@@ -262,6 +266,7 @@ export const useMarketStore = defineStore('market', () => {
   return {
     categories,
     locations,
+    typeGroupText,
     rows,
     source,
     refreshing,

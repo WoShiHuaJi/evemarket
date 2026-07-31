@@ -77,7 +77,14 @@ function setDirection(d: 'all' | 'jtoh' | 'htoj') {
 const filtered = computed<PriceRow[]>(() => {
   const q = search.value.trim().toLowerCase()
   let list = store.rows
-  if (q) list = list.filter((r) => r.type.name.toLowerCase().includes(q) || r.type.nameZh.includes(search.value.trim()))
+  if (q) {
+    list = list.filter(
+      (r) =>
+        r.type.name.toLowerCase().includes(q) ||
+        r.type.nameZh.includes(search.value.trim()) ||
+        (store.typeGroupText.get(r.type.id)?.includes(q) ?? false),
+    )
+  }
   if (direction.value === 'jtoh') {
     list = list.filter((r) => (r.jToHProfit ?? -Infinity) > 0)
   } else if (direction.value === 'htoj') {
@@ -146,7 +153,7 @@ function profitClass(v: number | null): string {
         <button :class="{ active: direction === 'jtoh' }" @click="setDirection('jtoh')">Jita到4H 有利可图</button>
         <button :class="{ active: direction === 'htoj' }" @click="setDirection('htoj')">4H到Jita 有利可图</button>
       </div>
-      <input v-model="search" placeholder="搜索物品（中/英文）" />
+      <input v-model="search" placeholder="搜索物品/分类（中/英文）" />
       <label>
         最低利润
         <input
