@@ -75,6 +75,24 @@ watch(shippingCost, (v) => {
     // ignore
   }
 })
+const facilityTax = ref<number>(
+  (() => {
+    try {
+      return Number(localStorage.getItem('evemarket-facility-tax')) || 0
+    } catch {
+      return 0
+    }
+  })(),
+)
+watch(facilityTax, (v) => {
+  try {
+    localStorage.setItem('evemarket-facility-tax', String(v))
+  } catch {
+    // ignore
+  }
+})
+const showTaxTip = ref(false)
+const SALES_TAX = 0.036
 const sortKey = ref<'jToHProfit' | 'jToHPct' | 'hToJProfit' | 'hToJPct' | 'jitaSell' | 'vol7' | 'vol30'>('jToHProfit')
 const sortDesc = ref(true)
 const showCount = ref(300)
@@ -94,17 +112,21 @@ const filtered = computed<PriceRow[]>(() => {
   const q = search.value.trim().toLowerCase()
   let list = store.rows
   const cost = shippingCost.value
-  if (cost > 0) {
+  const salesTax = SALES_TAX + facilityTax.value / 100
+  if (cost > 0 || salesTax > 0 || facilityTax.value > 0) {
     list = list.map((r) => {
       const haul = r.type.volume * cost
-      const jToHProfit = r.jToHProfit !== null ? r.jToHProfit - haul : null
-      const hToJProfit = r.hToJProfit !== null ? r.hToJProfit - haul : null
+      const js = r.jitaSell
+      const jb = r.jitaBuy
+      const hs = r.hwwfSell
+      const jToHProfit = js !== null && hs !== null ? hs * (1 - salesTax) - js - haul : null
+      const hToJProfit = hs !== null && jb !== null ? jb * (1 - SALES_TAX) - hs - haul : null
       return {
         ...r,
         jToHProfit,
-        jToHPct: jToHProfit !== null && r.jitaSell! > 0 ? (jToHProfit / r.jitaSell!) * 100 : null,
+        jToHPct: jToHProfit !== null && js! > 0 ? (jToHProfit / js!) * 100 : null,
         hToJProfit,
-        hToJPct: hToJProfit !== null && r.hwwfSell! > 0 ? (hToJProfit / r.hwwfSell!) * 100 : null,
+        hToJPct: hToJProfit !== null && hs! > 0 ? (hToJProfit / hs!) * 100 : null,
       }
     })
   }
@@ -203,6 +225,18 @@ function profitClass(v: number | null): string {
           :value="shippingCost || ''"
           @change="shippingCost = ($event.target as HTMLInputElement).valueAsNumber || 0"
         />
+      </label>
+      <label class="tax-label">
+        设施税率%
+        <input
+          type="number"
+          class="shipping-cost"
+          placeholder="0"
+          :value="facilityTax || ''"
+          @change="facilityTax = ($event.target as HTMLInputElement).valueAsNumber || 0"
+        />
+        <span class="tax-q" @click="showTaxTip = !showTaxTip">?</span>
+        <span v-if="showTaxTip" class="tax-tip">利润已自动扣除 3.6% 基础交易税</span>
       </label>
       <div class="col-picker">
         <button @click="showColPicker = !showColPicker">显示列 ▾</button>
@@ -314,6 +348,40 @@ input[type='number'] {
 }
 .shipping-cost {
   width: 55px;
+}
+.tax-label {
+  position: relative;
+}
+.tax-q {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  margin-left: 4px;
+  border: 1px solid #3d4657;
+  border-radius: 50%;
+  font-size: 11px;
+  color: #7d8aa0;
+  cursor: pointer;
+  user-select: none;
+}
+.tax-q:hover {
+  color: #e8ecf3;
+  border-color: #5d6a7d;
+}
+.tax-tip {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  z-index: 20;
+  background: #1b1f27;
+  border: 1px solid #3d4657;
+  border-radius: 6px;
+  padding: 8px 12px;
+  white-space: nowrap;
+  color: #aab4c4;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5);
 }
 .search-input {
   width: 140px;
