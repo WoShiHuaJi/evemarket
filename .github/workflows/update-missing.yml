@@ -1,0 +1,21 @@
+name: Backfill missing LP item prices
+
+on:
+  schedule:
+    - cron: '7 * * * *'
+  workflow_dispatch:
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - run: node scripts/update-missing-prices.mjs
+        env:
+          CF_API_TOKEN: ${{ secrets.CF_API_TOKEN }}
+          CF_ACCOUNT_ID: 1dfe0539c8d58192f82a475ae45cbd62
+          CF_KV_NAMESPACE_ID: 2bf893e7fa3d4e168176532dac9a6751
