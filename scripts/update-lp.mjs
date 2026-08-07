@@ -1,10 +1,13 @@
-import { writeFileSync, mkdirSync } from 'node:fs'
+import { writeFileSync, mkdirSync, readFileSync, existsSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..')
 const BASE = 'https://esi.evetech.net/latest'
 const CONCURRENCY = 8
+
+const zhNamesPath = join(ROOT, 'src/data/corp-names-zh.json')
+const zhNames = existsSync(zhNamesPath) ? JSON.parse(readFileSync(zhNamesPath, 'utf8')) : {}
 
 async function get(path, retries = 4) {
   for (let i = 0; ; i++) {
@@ -60,11 +63,8 @@ async function main() {
   console.log('2/4 fetching corp names...')
   const corps = []
   await pool(corpIds, CONCURRENCY, async (id) => {
-    const [en, zh] = await Promise.all([
-      get(`/corporations/${id}/?datasource=tranquility`),
-      get(`/corporations/${id}/?language=zh&datasource=tranquility`),
-    ])
-    if (en?.name) corps.push({ id, name: en.name, nameZh: zh?.name ?? '' })
+    const en = await get(`/corporations/${id}/?datasource=tranquility`)
+    if (en?.name) corps.push({ id, name: en.name, nameZh: zhNames[String(id)] ?? en.name })
   }, 'corps')
 
   console.log('3/4 fetching LP store offers...')

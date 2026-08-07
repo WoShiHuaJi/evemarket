@@ -113,7 +113,7 @@ function fmtInt(v: number | null): string {
   <div class="lp-controls">
     <div class="corp-search">
       <input v-model="corpSearch" class="corp-input" placeholder="搜索NPC公司" />
-      <div v-if="matchedCorps.length && !selectedCorp" class="corp-panel">
+      <div v-if="matchedCorps.length" class="corp-panel">
         <div v-for="c in matchedCorps" :key="c.id" class="corp-item" @click="selectCorp(c)">
           {{ c.nameZh || c.name }}<span class="en">{{ c.name }}</span>
         </div>
