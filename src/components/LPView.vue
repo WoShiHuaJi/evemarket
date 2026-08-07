@@ -28,7 +28,7 @@ const store = useMarketStore()
 
 const corpSearch = ref('')
 const selectedCorp = ref<LpCorp | null>(null)
-const rewardPrice = ref<'sell' | 'buy'>('sell')
+const rewardPrice = ref<'sell' | 'buy'>('buy')
 const reqPrice = ref<'sell' | 'buy'>('sell')
 const showCount = ref(200)
 
