@@ -175,9 +175,19 @@ export const useMarketStore = defineStore('market', () => {
       delay = Math.max(delay, 60_000)
     }
     nextRefreshAt.value = Date.now() + delay
-    timer = setTimeout(() => {
-      if (document.visibilityState === 'visible') refresh()
-      else scheduleNext()
+    timer = setTimeout(async () => {
+      if (document.visibilityState !== 'visible') {
+        scheduleNext()
+        return
+      }
+      const serverOk = await fetchServerPrices()
+      if (serverOk) {
+        source.value = 'server'
+        fetchServerVolumes()
+        scheduleServerPoll()
+        return
+      }
+      refresh()
     }, delay)
   }
 
