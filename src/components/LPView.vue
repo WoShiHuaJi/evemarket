@@ -375,7 +375,8 @@ th.sortable:hover {
   }
   .corp-panel {
     height: 40vh;
-    width: 100%;
+    width: 80vw;
+    max-width: 320px;
     min-width: 0;
   }
   .table-wrap {
