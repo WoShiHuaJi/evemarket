@@ -27,6 +27,7 @@ const lpData = rawLp as unknown as LpData
 const store = useMarketStore()
 
 const corpSearch = ref('')
+const corpFocus = ref(false)
 const selectedCorp = ref<LpCorp | null>(null)
 const rewardPrice = ref<'sell' | 'buy'>('buy')
 const reqPrice = ref<'sell' | 'buy'>('sell')
@@ -34,10 +35,10 @@ const showCount = ref(200)
 
 const matchedCorps = computed(() => {
   const q = corpSearch.value.trim().toLowerCase()
-  if (!q) return []
-  return lpData.corps
-    .filter((c) => c.name.toLowerCase().includes(q) || c.nameZh.includes(corpSearch.value.trim()))
-    .slice(0, 30)
+  if (!q) return lpData.corps
+  return lpData.corps.filter(
+    (c) => c.name.toLowerCase().includes(q) || c.nameZh.includes(corpSearch.value.trim()),
+  )
 })
 
 const priceMap = computed(() => {
@@ -111,7 +112,12 @@ const visible = computed(() => rows.value.slice(0, showCount.value))
 function selectCorp(c: LpCorp) {
   selectedCorp.value = c
   corpSearch.value = ''
+  corpFocus.value = false
   showCount.value = 200
+}
+
+function onCorpBlur() {
+  setTimeout(() => (corpFocus.value = false), 150)
 }
 
 function fmt(v: number | null): string {
@@ -131,8 +137,14 @@ function fmtInt(v: number | null): string {
 <template>
   <div class="lp-controls">
     <div class="corp-search">
-      <input v-model="corpSearch" class="corp-input" placeholder="搜索NPC公司" />
-      <div v-if="matchedCorps.length" class="corp-panel">
+      <input
+        v-model="corpSearch"
+        class="corp-input"
+        placeholder="搜索NPC公司"
+        @focus="corpFocus = true"
+        @blur="onCorpBlur"
+      />
+      <div v-if="corpFocus && matchedCorps.length" class="corp-panel">
         <div v-for="c in matchedCorps" :key="c.id" class="corp-item" @click="selectCorp(c)">
           {{ c.nameZh || c.name }}<span class="en">{{ c.name }}</span>
         </div>
@@ -230,7 +242,7 @@ function fmtInt(v: number | null): string {
   background: #1b1f27;
   border: 1px solid #3d4657;
   border-radius: 6px;
-  max-height: 320px;
+  height: 320px;
   overflow-y: auto;
   min-width: 280px;
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5);
