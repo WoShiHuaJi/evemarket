@@ -8,6 +8,7 @@
     "build": "vue-tsc -b && vite build",
     "preview": "vite preview",
     "generate": "node scripts/generate-data.mjs",
+    "generate-lp": "node scripts/update-lp.mjs",
     "deploy": "npm run build && wrangler deploy"
   },
   "dependencies": {
