@@ -373,6 +373,11 @@ th.sortable:hover {
   .corp-search {
     width: 100%;
   }
+  .corp-panel {
+    height: 40vh;
+    width: 100%;
+    min-width: 0;
+  }
   .table-wrap {
     padding: 0 8px 8px;
   }
