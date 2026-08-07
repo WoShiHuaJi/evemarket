@@ -59,10 +59,29 @@ interface LpRow {
   iskPerLp: number | null
 }
 
+const sortKey = ref<'lp' | 'reward' | 'profit' | 'iskPerLp'>('iskPerLp')
+const sortDesc = ref(true)
+
+function toggleSort(key: typeof sortKey.value) {
+  if (sortKey.value === key) sortDesc.value = !sortDesc.value
+  else {
+    sortKey.value = key
+    sortDesc.value = true
+  }
+}
+
 const rows = computed<LpRow[]>(() => {
   if (!selectedCorp.value) return []
   const pm = priceMap.value
   const list = lpData.offers.filter((o) => o.c === selectedCorp.value!.id)
+  const key = sortKey.value
+  const dir = sortDesc.value ? -1 : 1
+  const val = (r: LpRow): number => {
+    if (key === 'lp') return r.offer.lp
+    if (key === 'reward') return r.rewardValue !== null ? r.rewardValue * r.offer.q : (sortDesc.value ? -Infinity : Infinity)
+    if (key === 'profit') return r.profit ?? (sortDesc.value ? -Infinity : Infinity)
+    return r.iskPerLp ?? (sortDesc.value ? -Infinity : Infinity)
+  }
   return list
     .map((offer) => {
       const rp = pm.get(offer.t)
@@ -84,7 +103,7 @@ const rows = computed<LpRow[]>(() => {
       const iskPerLp = profit !== null && offer.lp > 0 ? profit / offer.lp : null
       return { offer, rewardValue: rewardValue ?? null, reqCost, profit, iskPerLp }
     })
-    .sort((a, b) => (b.iskPerLp ?? -Infinity) - (a.iskPerLp ?? -Infinity))
+    .sort((a, b) => (val(a) - val(b)) * dir)
 })
 
 const visible = computed(() => rows.value.slice(0, showCount.value))
@@ -147,12 +166,12 @@ function fmtInt(v: number | null): string {
         <tr>
           <th>物品</th>
           <th class="num">数量</th>
-          <th class="num">LP</th>
+          <th class="num sortable" @click="toggleSort('lp')">LP{{ sortKey === 'lp' ? (sortDesc ? ' ↓' : ' ↑') : '' }}</th>
           <th class="num">ISK成本</th>
           <th>所需物品</th>
-          <th class="num">物品价值</th>
-          <th class="num">利润</th>
-          <th class="num">每LP收益</th>
+          <th class="num sortable" @click="toggleSort('reward')">物品价值{{ sortKey === 'reward' ? (sortDesc ? ' ↓' : ' ↑') : '' }}</th>
+          <th class="num sortable" @click="toggleSort('profit')">利润{{ sortKey === 'profit' ? (sortDesc ? ' ↓' : ' ↑') : '' }}</th>
+          <th class="num sortable" @click="toggleSort('iskPerLp')">每LP收益{{ sortKey === 'iskPerLp' ? (sortDesc ? ' ↓' : ' ↑') : '' }}</th>
         </tr>
       </thead>
       <tbody>
@@ -276,6 +295,13 @@ th {
   top: 0;
   background: #161a21;
   z-index: 2;
+}
+th.sortable {
+  cursor: pointer;
+  user-select: none;
+}
+th.sortable:hover {
+  color: #e8ecf3;
 }
 .num {
   text-align: right;
