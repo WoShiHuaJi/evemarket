@@ -22,6 +22,7 @@ export interface PriceRow {
   hwwfBuy: number | null
   vol7: number | null
   vol30: number | null
+  lastPrice: number | null
   jToHProfit: number | null
   jToHPct: number | null
   hToJProfit: number | null
@@ -57,7 +58,7 @@ export const useMarketStore = defineStore('market', () => {
   const jitaOrders = ref<Order[]>([])
   const hwwfOrders = ref<Order[]>([])
   const serverRows = ref<PriceRow[] | null>(null)
-  const serverVolumes = ref<Record<string, [number, number]> | null>(null)
+  const serverVolumes = ref<Record<string, [number, number, number]> | null>(null)
   const source = ref<'server' | 'local'>('local')
   const refreshing = ref(false)
   const progress = ref<{ jita: [number, number]; hwwf: [number, number] }>({ jita: [0, 0], hwwf: [0, 0] })
@@ -92,6 +93,7 @@ export const useMarketStore = defineStore('market', () => {
         hwwfBuy: hb,
         vol7: v ? v[0] : null,
         vol30: v ? v[1] : null,
+        lastPrice: v && v[2] > 0 ? v[2] : null,
         jToHProfit,
         jToHPct: jToHProfit !== null && js! > 0 ? (jToHProfit / js!) * 100 : null,
         hToJProfit,
@@ -266,6 +268,7 @@ export const useMarketStore = defineStore('market', () => {
         hwwfBuy: h.buy,
         vol7: null,
         vol30: null,
+        lastPrice: null,
         jToHProfit,
         jToHPct: jToHProfit !== null && j.sell! > 0 ? (jToHProfit / j.sell!) * 100 : null,
         hToJProfit,

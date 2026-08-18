@@ -11,6 +11,7 @@ const columnDefs = [
   { key: 'hwwfBuy', label: '4-HWWF 买价' },
   { key: 'vol7', label: '4H 7天销量' },
   { key: 'vol30', label: '4H 30天销量' },
+  { key: 'lastPrice', label: '4H 最近成交价' },
   { key: 'jToHProfit', label: 'Jita到4H 利润' },
   { key: 'jToHPct', label: 'Jita到4H 利润率' },
   { key: 'hToJProfit', label: '4H到Jita 利润' },
@@ -27,6 +28,7 @@ const mobileDefaultCols: Record<ColKey, boolean> = {
   hwwfBuy: true,
   vol7: true,
   vol30: false,
+  lastPrice: false,
   jToHProfit: false,
   jToHPct: false,
   hToJProfit: false,
@@ -93,7 +95,7 @@ watch(facilityTax, (v) => {
 })
 const showTaxTip = ref(false)
 const SALES_TAX = 0.036
-const sortKey = ref<'jToHProfit' | 'jToHPct' | 'hToJProfit' | 'hToJPct' | 'jitaSell' | 'vol7' | 'vol30'>('jToHProfit')
+const sortKey = ref<'jToHProfit' | 'jToHPct' | 'hToJProfit' | 'hToJPct' | 'jitaSell' | 'vol7' | 'vol30' | 'lastPrice'>('jToHProfit')
 const sortDesc = ref(true)
 const showCount = ref(300)
 
@@ -260,6 +262,7 @@ function profitClass(v: number | null): string {
           <th v-if="visibleCols.hwwfBuy" class="num">4-HWWF 买价</th>
           <th v-if="visibleCols.vol7" class="num sortable" @click="toggleSort('vol7')">4H 7天销量</th>
           <th v-if="visibleCols.vol30" class="num sortable" @click="toggleSort('vol30')">4H 30天销量</th>
+          <th v-if="visibleCols.lastPrice" class="num sortable" @click="toggleSort('lastPrice')">4H 最近成交价</th>
           <template v-if="direction !== 'htoj'">
             <th v-if="visibleCols.jToHProfit" class="num sortable" @click="toggleSort('jToHProfit')">Jita到4H 利润</th>
             <th v-if="visibleCols.jToHPct" class="num sortable" @click="toggleSort('jToHPct')">Jita到4H 利润率</th>
@@ -282,6 +285,7 @@ function profitClass(v: number | null): string {
           <td v-if="visibleCols.hwwfBuy" class="num">{{ fmt(r.hwwfBuy) }}</td>
           <td v-if="visibleCols.vol7" class="num">{{ fmtVol(r.vol7) }}</td>
           <td v-if="visibleCols.vol30" class="num">{{ fmtVol(r.vol30) }}</td>
+          <td v-if="visibleCols.lastPrice" class="num">{{ fmt(r.lastPrice) }}</td>
           <template v-if="direction !== 'htoj'">
             <td v-if="visibleCols.jToHProfit" class="num" :class="profitClass(r.jToHProfit)">{{ fmt(r.jToHProfit) }}</td>
             <td v-if="visibleCols.jToHPct" class="num" :class="profitClass(r.jToHProfit)">{{ fmtPct(r.jToHPct) }}</td>

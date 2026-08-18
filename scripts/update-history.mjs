@@ -58,7 +58,8 @@ await Promise.all(
       const sorted = [...history].sort((a, b) => (a.date < b.date ? 1 : -1))
       const v7 = sorted.slice(0, 7).reduce((s, e) => s + e.volume, 0)
       const v30 = sorted.slice(0, 30).reduce((s, e) => s + e.volume, 0)
-      if (v7 > 0 || v30 > 0) vol[id] = [v7, v30]
+      const lastAvg = sorted[0]?.average ?? 0
+      if (v7 > 0 || v30 > 0) vol[id] = [v7, v30, lastAvg]
       if (idx % 500 === 0) console.log(`  ${idx}/${typeIds.length}`)
     }
   }),
